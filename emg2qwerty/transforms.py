@@ -17,7 +17,7 @@ TTransformIn = TypeVar("TTransformIn")
 TTransformOut = TypeVar("TTransformOut")
 Transform = Callable[[TTransformIn], TTransformOut]
 
-
+# TODO(christian) read through this data augmentation & tensors
 @dataclass
 class ToTensor:
     """Extracts the specified ``fields`` from a numpy structured array

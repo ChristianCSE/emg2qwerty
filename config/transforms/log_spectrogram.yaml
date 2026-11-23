@@ -1,14 +1,18 @@
 # @package _global_
+# lecture: records all the pre-processing & data augmentation
 to_tensor:
-  _target_: emg2qwerty.transforms.ToTensor
+  _target_: emg2qwerty.transforms.ToTensor # file locations
   fields: [emg_left, emg_right]
 
+# one of the data augmentations
 band_rotation:
   _target_: emg2qwerty.transforms.ForEach  # i.i.d rotation offset for each band
   transform:
     _target_: emg2qwerty.transforms.RandomBandRotation
+    # you can modify these parameters
     offsets: [-1, 0, 1]
 
+# adds noise to data to augment it, so regularizer? (me note)
 temporal_jitter:
   _target_: emg2qwerty.transforms.TemporalAlignmentJitter
   max_offset: 120  # Max 60ms jitter for 2kHz EMG
@@ -25,6 +29,8 @@ specaug:
   n_freq_masks: 2
   freq_mask_param: 4
 
+# below ${specaug} correspond to classes above
+# we can add our own additional data augmentation
 transforms:
   train:
     - ${to_tensor}

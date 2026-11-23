@@ -1,3 +1,4 @@
+# all of these are pytorch classes
 defaults:
   - user: single_user
   - transforms: log_spectrogram
@@ -20,6 +21,7 @@ trainer:
   accelerator: gpu
   devices: 1
   num_nodes: 1
+  # we can change this (among other things)
   max_epochs: 150
   default_root_dir: ${hydra:runtime.output_dir}
 

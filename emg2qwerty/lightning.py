@@ -29,6 +29,7 @@ from emg2qwerty.modules import (
 from emg2qwerty.transforms import Transform
 
 
+# hparam of the input set?
 class WindowedEMGDataModule(pl.LightningDataModule):
     def __init__(
         self,
@@ -62,6 +63,9 @@ class WindowedEMGDataModule(pl.LightningDataModule):
     def setup(self, stage: str | None = None) -> None:
         self.train_dataset = ConcatDataset(
             [
+                # TODO(Christian): lecture
+                # includes some of the hparams of the input?
+                # tells us how it loads the data emgsessiondata function
                 WindowedEMGDataset(
                     hdf5_path,
                     transform=self.train_transform,
@@ -136,7 +140,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             persistent_workers=True,
         )
 
-
+# here is where you should conduct experiments in terms of model structure
 class TDSConvCTCModule(pl.LightningModule):
     NUM_BANDS: ClassVar[int] = 2
     ELECTRODE_CHANNELS: ClassVar[int] = 16
@@ -156,8 +160,10 @@ class TDSConvCTCModule(pl.LightningModule):
 
         num_features = self.NUM_BANDS * mlp_features[-1]
 
+
         # Model
         # inputs: (T, N, bands=2, electrode_channels=16, freq)
+        # https: // docs.pytorch.org / docs / 2.15 / generated / torch.nn.Module.html  # torch.nn.Module
         self.model = nn.Sequential(
             # (T, N, bands=2, C=16, freq)
             SpectrogramNorm(channels=self.NUM_BANDS * self.ELECTRODE_CHANNELS),
@@ -169,6 +175,12 @@ class TDSConvCTCModule(pl.LightningModule):
             ),
             # (T, N, num_features)
             nn.Flatten(start_dim=2),
+            # TODO(christian) fully convolutional encoder built using
+            #  Time-depth Separable convolution blocks
+            # conduct experiments on different architectures!
+            # it's using a tds encoder
+            # LSTM? so can use a different encoder?
+            # class TDSConvEncoder(nn.LSTM) and then call here  
             TDSConvEncoder(
                 num_features=num_features,
                 block_channels=block_channels,

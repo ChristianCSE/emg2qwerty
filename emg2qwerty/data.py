@@ -480,10 +480,11 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         # Lazy init `EMGSessionData` per dataloading worker
         # since `h5py.File` objects can't be picked.
         if not hasattr(self, "session"):
-            self.session = EMGSessionData(self.hdf5_path)
+            self.session = EMGSessionData(self.hdf5_path) # loads the data
 
         offset = idx * self.stride
 
+        # TODO(christian): this is applying the data augmentation!
         # Randomly jitter the window offset.
         leftover = len(self.session) - (offset + self.window_length)
         if leftover < 0:
@@ -491,6 +492,7 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         if leftover > 0 and self.jitter:
             offset += np.random.randint(0, min(self.stride, leftover))
 
+        # TODO(christian) lecture windowed data extraction
         # Expand window to include contextual padding and fetch.
         window_start = max(offset - self.left_padding, 0)
         window_end = offset + self.window_length + self.right_padding

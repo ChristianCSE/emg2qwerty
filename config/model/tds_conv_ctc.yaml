@@ -6,6 +6,9 @@ module:
   block_channels: [24, 24, 24, 24]
   kernel_width: 32  # Total temporal receptive field of 125 samples given 4 layers
 
+# tells us how to extract the ? data from the dataset
+# each session runs like several minutes to hour
+# lecture: seems we can iterate on window_length? more seconds?
 datamodule:
   _target_: emg2qwerty.lightning.WindowedEMGDataModule
   window_length: 8000  # 4 sec windows for 2kHz EMG
