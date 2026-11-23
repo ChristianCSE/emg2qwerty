@@ -196,17 +196,27 @@ class TDSConv2dBlock(nn.Module):
         self.relu = nn.ReLU()
         self.layer_norm = nn.LayerNorm(channels * width)
 
+    # (622,32,768)
+    # T_in: input time frames | C num features
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         T_in, N, C = inputs.shape  # TNC
+        # C = 768 = C * W
+        # C = (768 = 2 * mlp)
 
-        # TNC -> NCT -> NcwT
+        # TNC -> NCT -> N ch w T | ch * w = C
         x = inputs.movedim(0, -1).reshape(N, self.channels, self.width, T_in)
-        x = self.conv2d(x)
+
+        # (N,ch,w,T) convo (ch,ch,1,k_w)
+        x = self.conv2d(x) # (Ex, Filt, ch-width, w-kernel_w)
         x = self.relu(x)
-        x = x.reshape(N, C, -1).movedim(-1, 0)  # NcwT -> NCT -> TNC
+        # (Ex, (Filt * ch-width) , w-kernel_w) = (32, 768, 591) =>
+        # (591, 32, 768) = (Filt * ch-width, Ex, w-kernel_w)
+        x = x.reshape(N, C, -1).movedim(-1, 0)
 
         # Skip connection after downsampling
-        T_out = x.shape[0]
+        T_out = x.shape[0] # Filt * ch-width = 591
+        # ? inputs[-591:] takes the last 591 entries
+        # as in takes the last entry? and broadcasts it to the 591 channels?
         x = x + inputs[-T_out:]
 
         # Layer norm over C

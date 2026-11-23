@@ -159,6 +159,7 @@ class TDSConvCTCModule(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
+        # tds_conv_ctc.yaml = mlp_features: [384]
         num_features = self.NUM_BANDS * mlp_features[-1]
 
 
@@ -166,9 +167,15 @@ class TDSConvCTCModule(pl.LightningModule):
         # inputs: (T, N, bands=2, electrode_channels=16, freq)
         # https: // docs.pytorch.org / docs / 2.15 / generated / torch.nn.Module.html  # torch.nn.Module
         self.model = nn.Sequential(
-            # (T, N, bands=2, C=16, freq)
+            # return: (T, N, bands=2, C=16, freq) example is normalized per channel:
+            # so a single channel runs through each example mapped to it
+            # so 32 iterations of (N, freq, T) one for each channel
+            # 32 different means & vars, and 64 learnable params (B & y)
+            # inside: (N, 32, freq, T) so 32 stacked matrices of freq*T spectogram
             SpectrogramNorm(channels=self.NUM_BANDS * self.ELECTRODE_CHANNELS),
-            # (T, N, bands=2, mlp_features[-1])
+            # returns: (T, N, bands=2, mlp_features[-1])
+            # pooling defaults to mean
+            # Each band (2) gets a RotationInvariantMLP(in_fts, mlp_fts, pooling=mean, offsets=(-1,0,1))
             MultiBandRotationInvariantMLP(
                 in_features=in_features,
                 mlp_features=mlp_features,
@@ -182,9 +189,14 @@ class TDSConvCTCModule(pl.LightningModule):
             # it's using a tds encoder
             # LSTM? so can use a different encoder?
             # class TDSConvEncoder(nn.LSTM) and then call here
+            # where actually dim reshape occurs (encoder will reduce dims)
+            # there's a TDSConv2dBlock done which exec's:
+            # conv2d, relu, skip cnxn, downsampling, layer_norm
+            # what's the output from above? since that goes into forward
             TDSConvEncoder(
                 num_features=num_features,
                 block_channels=block_channels,
+                # kernel_width: 32  from tds...yml
                 kernel_width=kernel_width,
             ),
             # (T, N, num_classes)
