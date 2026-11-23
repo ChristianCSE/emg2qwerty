@@ -142,6 +142,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
 
 # here is where you should conduct experiments in terms of model structure
 class TDSConvCTCModule(pl.LightningModule):
+    # as in sheet for experiment setup: one per wrist, 16 per band
     NUM_BANDS: ClassVar[int] = 2
     ELECTRODE_CHANNELS: ClassVar[int] = 16
 
@@ -180,7 +181,7 @@ class TDSConvCTCModule(pl.LightningModule):
             # conduct experiments on different architectures!
             # it's using a tds encoder
             # LSTM? so can use a different encoder?
-            # class TDSConvEncoder(nn.LSTM) and then call here  
+            # class TDSConvEncoder(nn.LSTM) and then call here
             TDSConvEncoder(
                 num_features=num_features,
                 block_channels=block_channels,

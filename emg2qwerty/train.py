@@ -53,13 +53,17 @@ def main(config: DictConfig):
     def _build_transform(configs: Sequence[DictConfig]) -> Transform[Any, Any]:
         return transforms.Compose([instantiate(cfg) for cfg in configs])
 
-    # Instantiate LightningModule
+    # Instantiate LightningModule (picks up
     log.info(f"Instantiating LightningModule {config.module}")
+    # TODO(christian) all the stuff passed through, hydra
     module = instantiate(
+        # instantiates our TDSConvoCTCModule from tds_conv_ctc
         config.module,
         optimizer=config.optimizer,
         lr_scheduler=config.lr_scheduler,
+        # todo(christian) how the decoder is used
         decoder=config.decoder,
+        # meaning what?
         _recursive_=False,
     )
     if config.checkpoint is not None:
@@ -74,9 +78,12 @@ def main(config: DictConfig):
     # Instantiate LightningDataModule
     log.info(f"Instantiating LightningDataModule {config.datamodule}")
     datamodule = instantiate(
+        # here's our data augmentation module getting instantiated
         config.datamodule,
         batch_size=config.batch_size,
         num_workers=config.num_workers,
+        # unclear how the base.yaml is unrolled? this refers to
+        # single_user.dataset.train
         train_sessions=_full_session_paths(config.dataset.train),
         val_sessions=_full_session_paths(config.dataset.val),
         test_sessions=_full_session_paths(config.dataset.test),

@@ -1,4 +1,5 @@
 # all of these are pytorch classes
+# what's passed to train.py
 defaults:
   - user: single_user
   - transforms: log_spectrogram
