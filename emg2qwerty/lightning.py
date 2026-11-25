@@ -311,7 +311,7 @@ class TDSConvCTCModule(pl.LightningModule):
         )
 
 
-class RnnCTCModule(TDSConvCTCModule):
+class RNNCTCModule(TDSConvCTCModule):
     def __init__(
         self,
         in_features: int,
@@ -326,7 +326,7 @@ class RnnCTCModule(TDSConvCTCModule):
         lr_scheduler: DictConfig,
         decoder: DictConfig,
     ) -> None:
-        pl.LightningDataModule.__init__
+        pl.LightningDataModule.__init__(self)
         self.save_hyperparameters()
         num_features = self.NUM_BANDS * mlp_features[-1]
 

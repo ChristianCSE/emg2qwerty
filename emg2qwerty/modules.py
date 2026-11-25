@@ -321,6 +321,7 @@ class RNNEncoder(nn.Module):
             bidirectional: bool,
             dropout: float,
             trim: int) :
+        print('hereherehereherehere')
         super().__init__()
         rnn_class = RNN_CLASSES.get(rnn_type.lower())
         if rnn_class is None:
