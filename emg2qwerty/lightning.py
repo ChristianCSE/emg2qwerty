@@ -246,6 +246,7 @@ class TDSConvCTCModule(pl.LightningModule):
         target_lengths = batch["target_lengths"]
         N = len(input_lengths)  # batch_size
 
+        # me: exec's sequential model with chosen encoder
         emissions = self.forward(inputs)
 
         # Shrink input lengths by an amount equivalent to the conv encoder's
@@ -303,6 +304,7 @@ class TDSConvCTCModule(pl.LightningModule):
     def on_test_epoch_end(self) -> None:
         self._epoch_end("test")
 
+    # optimizers (hydra configs: adam, lr in base.yaml)
     def configure_optimizers(self) -> dict[str, Any]:
         return utils.instantiate_optimizer_and_scheduler(
             self.parameters(),
@@ -326,7 +328,8 @@ class RNNCTCModule(TDSConvCTCModule):
         lr_scheduler: DictConfig,
         decoder: DictConfig,
     ) -> None:
-        pl.LightningDataModule.__init__(self)
+        # pl.LightningDataModule.__init__
+        super(TDSConvCTCModule, self).__init__()
         self.save_hyperparameters()
         num_features = self.NUM_BANDS * mlp_features[-1]
 

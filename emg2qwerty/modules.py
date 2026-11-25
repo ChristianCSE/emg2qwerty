@@ -321,7 +321,7 @@ class RNNEncoder(nn.Module):
             bidirectional: bool,
             dropout: float,
             trim: int) :
-        print('hereherehereherehere')
+
         super().__init__()
         rnn_class = RNN_CLASSES.get(rnn_type.lower())
         if rnn_class is None:
@@ -334,7 +334,9 @@ class RNNEncoder(nn.Module):
             dropout=dropout
         )
         self.trim = trim
+        # double LSTMs (forward & backward direction)
         factor = 2 if bidirectional else 1
+        # more learnable params
         output_size = hidden_size * factor
         self.proj = None
         if output_size == num_features:

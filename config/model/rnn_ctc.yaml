@@ -6,7 +6,7 @@ module:
   hidden_size: 384
   num_layers: 3
   rnn_type: lstm
-  bidirectional: true
+  bidirectional: false
   dropout: 0.0
   trim: 124 # 4 blocks (k_w-1)
   # Total temporal receptive field of 125 samples given 4 layers
