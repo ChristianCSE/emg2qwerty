@@ -326,7 +326,7 @@ class RnnCTCModule(TDSConvCTCModule):
         lr_scheduler: DictConfig,
         decoder: DictConfig,
     ) -> None:
-        pl.LightningDataModule.__init__(self)
+        pl.LightningDataModule.__init__
         self.save_hyperparameters()
         num_features = self.NUM_BANDS * mlp_features[-1]
 

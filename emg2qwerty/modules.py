@@ -347,6 +347,6 @@ class RNNEncoder(nn.Module):
         out, _ = self.rnn(inputs)
         out = self.proj(out)
         if self.trim:
-            return out[self.trim]
+            return out[self.trim:]
         else:
             return out
