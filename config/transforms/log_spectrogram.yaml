@@ -1,13 +1,34 @@
 # @package _global_
 # lecture: records all the pre-processing & data augmentation
+
+# how are these things enforced? per epoch?
+
+# 2k Hz: 2000 recordings per second, so 1 recording
+# is 0.5 ms, we record on individual writs, and
+# each band has 16 electrodes
+
+# Tensor: (Time, batch, electrode_channel)
+# (10k=instances / samples,2=wrist bands, 16=channels per wrist_bands)
+# so 10k recorded instances
+# [:,0,7] 10k recorded entries of writs 0 on electrode 7
+# keystrokes don't overlap at this stage
 to_tensor:
   _target_: emg2qwerty.transforms.ToTensor # file locations
   fields: [emg_left, emg_right]
 
 # one of the data augmentations
+# applies tf each batch item in (T,N=batch, electrode channel)
+# regularizer: wristband indices 0 to 15 channels we shift them
+# prevents learning positions as in electrode indices: prevent coupling
+# a specific muscle to a specific electronode (we randomly pick one offset)
 band_rotation:
   _target_: emg2qwerty.transforms.ForEach  # i.i.d rotation offset for each band
   transform:
+    # this tf assumes last unit in tensor is C (Channel)
+    # what does it even mean to do band rotation augmentation and how does shifting
+    # electrode channels by an offset do that? Our input is TNC so this would apply
+    # band rotation for all items in the batch with the same offset: however, says that
+    # since we have the foreach wrapper we are applying different rotations somehow?
     _target_: emg2qwerty.transforms.RandomBandRotation
     # you can modify these parameters
     offsets: [-1, 0, 1]

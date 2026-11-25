@@ -69,6 +69,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
                 WindowedEMGDataset(
                     hdf5_path,
                     transform=self.train_transform,
+                    # window_length: 8000 tds_convo_ctc
                     window_length=self.window_length,
                     padding=self.padding,
                     jitter=True,
@@ -165,22 +166,32 @@ class TDSConvCTCModule(pl.LightningModule):
 
         # Model
         # inputs: (T, N, bands=2, electrode_channels=16, freq)
-        # https: // docs.pytorch.org / docs / 2.15 / generated / torch.nn.Module.html  # torch.nn.Module
+
         self.model = nn.Sequential(
-            # return: (T, N, bands=2, C=16, freq) example is normalized per channel:
+            # return: (T, N, bands=2, C=16, freq=33) example is normalized per channel:
             # so a single channel runs through each example mapped to it
             # so 32 iterations of (N, freq, T) one for each channel
             # 32 different means & vars, and 64 learnable params (B & y)
             # inside: (N, 32, freq, T) so 32 stacked matrices of freq*T spectogram
+
+            # batch (mean & var) per channel. pools over (N,H,W). Reshape
+            # (N, bands * electrodes, freq bins, T) | 2d = freq bins, time
+            # stats computed per electrode, pooled across frequencies
+            # equalize 32 electrodes against each other; doesn't equalize freq bins against each other
             SpectrogramNorm(channels=self.NUM_BANDS * self.ELECTRODE_CHANNELS),
             # returns: (T, N, bands=2, mlp_features[-1])
             # pooling defaults to mean
             # Each band (2) gets a RotationInvariantMLP(in_fts, mlp_fts, pooling=mean, offsets=(-1,0,1))
+
+            # input: (T frames, N windows, band, electrode, freq bins)
+            # Note: we've gone through LogSpectrogram data augmentation by this point (log_spectrogram.yaml)
+            #
             MultiBandRotationInvariantMLP(
                 in_features=in_features,
                 mlp_features=mlp_features,
                 num_bands=self.NUM_BANDS,
             ),
+
             # (T, N, num_features)
             nn.Flatten(start_dim=2),
             # TODO(christian) fully convolutional encoder built using

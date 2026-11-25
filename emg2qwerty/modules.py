@@ -28,17 +28,31 @@ class SpectrogramNorm(nn.Module):
 
     def __init__(self, channels: int) -> None:
         super().__init__()
-        self.channels = channels
+        self.channels = channels # 32
 
-        self.batch_norm = nn.BatchNorm2d(channels)
+        # spatial batch dimension: norm by C,
+        # computing stats on (N,H,W) slices
+        # 16 electrodes per wristband, so 32
+        # the N examples get grouped into the 32, so 32 decides the params
+        # B & gamma = 2*32 = 64
+        # NOTE: Affine inside of this!
+        self.batch_norm = nn.BatchNorm2d(channels) # 32
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        T, N, bands, C, freq = inputs.shape  # (T, N, bands=2, C=16, freq)
-        assert self.channels == bands * C
+        T, N, bands, C, freq = inputs.shape  # (T, N, bands=2, C=16, freq=33)
+        assert self.channels == bands * C # allows for reshape to work
 
-        x = inputs.movedim(0, -1)  # (N, bands=2, C=16, freq, T)
-        x = x.reshape(N, bands * C, freq, T)
-        x = self.batch_norm(x)
+        x = inputs.movedim(0, -1)  # (N, bands=2, C=16, freq=33, T)
+        x = x.reshape(N, bands * C, freq, T) # (N, 32, freq=33, T)
+
+        # every electrode is normalized individually
+        # Note: the stats are across the examples, so while an N example
+        # has its writs to (freqxT) we actually normalize across example
+        # so one normalization (we do 32 in total) is (N,1,freq,T) so
+        # all the freqxT matrices for the given channel rec'd all examples
+        # slice = [:,c,:,:]
+        x = self.batch_norm(x) # (N, 32, freq=33, T)
+
         x = x.reshape(N, bands, C, freq, T)
         return x.movedim(-1, 0)  # (T, N, bands=2, C=16, freq)
 
@@ -92,11 +106,15 @@ class RotationInvariantMLP(nn.Module):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         x = inputs  # (T, N, C, ...)
 
+        # (TODO: christian) deep dive on shift & offsets being applied (three)
+        # as well as mean pooling
         # Create a new dim for band rotation augmentation with each entry
         # corresponding to the original tensor with its electrode channels
         # shifted by one of ``offsets``:
         # (T, N, C, ...) -> (T, N, rotation, C, ...)
         x = torch.stack([x.roll(offset, dims=2) for offset in self.offsets], dim=2)
+        # me: so rather than having 1 fixed channel mapping (0,...,15) we now do 3 shifts
+        # but each is its own individual thing (T, N, shift, C)
 
         # Flatten features and pass through MLP:
         # (T, N, rotation, C, ...) -> (T, N, rotation, mlp_features[-1])
@@ -199,24 +217,24 @@ class TDSConv2dBlock(nn.Module):
     # (622,32,768)
     # T_in: input time frames | C num features
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        # Tin = 622 frames, N examples = 32, C  = 768 features
         T_in, N, C = inputs.shape  # TNC
-        # C = 768 = C * W
-        # C = (768 = 2 * mlp)
 
-        # TNC -> NCT -> N ch w T | ch * w = C
+        # (T,N,C) -> (N,C,T) -> (N, 24, 32, T)
         x = inputs.movedim(0, -1).reshape(N, self.channels, self.width, T_in)
 
-        # (N,ch,w,T) convo (ch,ch,1,k_w)
-        x = self.conv2d(x) # (Ex, Filt, ch-width, w-kernel_w)
+        # (ex, filter, slot, time) = (32, 24, 32, 591)
+        x = self.conv2d(x)
         x = self.relu(x)
-        # (Ex, (Filt * ch-width) , w-kernel_w) = (32, 768, 591) =>
-        # (591, 32, 768) = (Filt * ch-width, Ex, w-kernel_w)
+
+        # reshape (32, 768, 591) 24*32=768
+        # movedim (591, 32, 768)
         x = x.reshape(N, C, -1).movedim(-1, 0)
 
         # Skip connection after downsampling
-        T_out = x.shape[0] # Filt * ch-width = 591
-        # ? inputs[-591:] takes the last 591 entries
-        # as in takes the last entry? and broadcasts it to the 591 channels?
+        T_out = x.shape[0] # time = 591
+        # starts backwards from last index and gets 591 entries
+        # i[-t] = (591, N, C)
         x = x + inputs[-T_out:]
 
         # Layer norm over C

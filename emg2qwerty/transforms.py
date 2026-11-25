@@ -95,6 +95,13 @@ class Compose:
         return data
 
 
+# shifts channels on writ bands | regularizer | also
+# mimics the fact that wristband placement won't always match:
+# avoids learning channel indices, avoids reliance on this as a signal
+# muscle to index not reliable as requires consistent wristband placement
+# still recording muscle to finger, not index to muscle
+# note: random enforcement on actual roll shift, else noise would be consistent, making it useless
+
 @dataclass
 class RandomBandRotation:
     """Applies band rotation augmentation by shifting the electrode channels
@@ -171,9 +178,16 @@ class LogSpectrogram:
     n_fft: int = 64
     hop_length: int = 16
 
+    # nn_fft: 64, hop_length: 16 (2k Hz = 2000 recordings per second, so 1 recording per .5 ms = 0.0005 s)
+    #WRONG: 2000 / 16 = 125 hz so 125 per second, so reduced by 16 and to get 2000 recordings we need 4 seconds
+
+    # Tensor: Dimension (..., freq, time), where freq is
+    # ``n_fft // 2 + 1`` where ``n_fft`` is the number of
+    # Fourier bins, and time is the number of window hops (n_frame).
+    # 64 // 2 + 1 = 33 bins
     def __post_init__(self) -> None:
         self.spectrogram = torchaudio.transforms.Spectrogram(
-            n_fft=self.n_fft,
+            n_fft=self.n_fft, # number of samples in window (64)
             hop_length=self.hop_length,
             normalized=True,
             # Disable centering of FFT windows to avoid padding inconsistencies
