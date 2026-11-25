@@ -306,3 +306,47 @@ class TDSConvEncoder(nn.Module):
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         return self.tds_conv_blocks(inputs)  # (T, N, num_features)
+
+RNN_CLASSES = {
+    "lstm": nn.LSTM,
+    "rnn": nn.RNN,
+}
+class RNNEncoder(nn.Module):
+    def __init__(
+            self,
+            rnn_type: str,
+            num_features: int,
+            hidden_size: int,
+            num_layers: int,
+            bidirectional: bool,
+            dropout: float,
+            trim: int) :
+        super().__init__()
+        rnn_class = RNN_CLASSES.get(rnn_type.lower())
+        if rnn_class is None:
+            raise ValueError(f"Unsupported rnn type {rnn_type}")
+        self.rnn = rnn_class(
+            input_size=num_features,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            bidirectional=bidirectional,
+            dropout=dropout
+        )
+        self.trim = trim
+        factor = 2 if bidirectional else 1
+        output_size = hidden_size * factor
+        self.proj = None
+        if output_size == num_features:
+            self.proj = nn.Identity()
+        else:
+            self.proj = nn.Linear(output_size, num_features)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        # TODO(christian) just one for accurate dim reporting
+        # print(inputs.shape)
+        out, _ = self.rnn(inputs)
+        out = self.proj(out)
+        if self.trim:
+            return out[self.trim]
+        else:
+            return out

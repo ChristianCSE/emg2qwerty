@@ -43,6 +43,9 @@ logspec:
   n_fft: 64
   hop_length: 16  # Downsamples from 2kHz to 125Hz
 
+# paper: max 3 masks of segments of length up to 200 ms
+# frequency masking max 2 masks up to
+# 4 continuous freq bins 
 specaug:
   _target_: emg2qwerty.transforms.SpecAugment
   n_time_masks: 3

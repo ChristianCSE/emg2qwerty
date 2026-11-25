@@ -25,6 +25,7 @@ from emg2qwerty.modules import (
     MultiBandRotationInvariantMLP,
     SpectrogramNorm,
     TDSConvEncoder,
+    RNNEncoder,
 )
 from emg2qwerty.transforms import Transform
 
@@ -185,7 +186,9 @@ class TDSConvCTCModule(pl.LightningModule):
 
             # input: (T frames, N windows, band, electrode, freq bins)
             # Note: we've gone through LogSpectrogram data augmentation by this point (log_spectrogram.yaml)
-            #
+            # Paper: Together with rotation augmentation, aim to improve generalizability
+            # across user sessions, mainly due to ban placement between sessions (electrode shifts
+            # due to placement)
             MultiBandRotationInvariantMLP(
                 in_features=in_features,
                 mlp_features=mlp_features,
@@ -212,6 +215,7 @@ class TDSConvCTCModule(pl.LightningModule):
             ),
             # (T, N, num_classes)
             nn.Linear(num_features, charset().num_classes),
+            # probabilities
             nn.LogSoftmax(dim=-1),
         )
 
@@ -304,4 +308,68 @@ class TDSConvCTCModule(pl.LightningModule):
             self.parameters(),
             optimizer_config=self.hparams.optimizer,
             lr_scheduler_config=self.hparams.lr_scheduler,
+        )
+
+
+class RnnCTCModule(TDSConvCTCModule):
+    def __init__(
+        self,
+        in_features: int,
+        mlp_features: Sequence[int],
+        hidden_size: int,
+        num_layers: int,
+        rnn_type: str,
+        bidirectional: bool,
+        dropout: float,
+        trim: int,
+        optimizer: DictConfig,
+        lr_scheduler: DictConfig,
+        decoder: DictConfig,
+    ) -> None:
+        pl.LightningDataModule.__init__(self)
+        self.save_hyperparameters()
+        num_features = self.NUM_BANDS * mlp_features[-1]
+
+        self.model = nn.Sequential(
+            # (T,N,bands=2,C=electrodes=16,freq_bins)
+            # batch by 32 electrodes
+            SpectrogramNorm(channels=self.NUM_BANDS * self.ELECTRODE_CHANNELS),
+            # (T, N, bands, mlp_features[-1])
+            MultiBandRotationInvariantMLP(
+                in_features=in_features,
+                mlp_features=mlp_features,
+                num_bands=self.NUM_BANDS,
+            ),
+            # (T, N, num_features)
+            nn.Flatten(start_dim=2),
+
+            RNNEncoder(
+                rnn_type=rnn_type,
+                num_features=num_features,
+                hidden_size=hidden_size,
+                num_layers=num_layers,
+                bidirectional=bidirectional,
+                dropout=dropout,
+                trim=trim,
+            ),
+
+            # (T, N, num_classes)
+            nn.Linear(num_features, charset().num_classes),
+            # probabilities
+            nn.LogSoftmax(dim=-1),
+        )
+
+        # Criterion
+        self.ctc_loss = nn.CTCLoss(blank=charset().null_class)
+
+        # Decoder
+        self.decoder = instantiate(decoder)
+
+        # Metrics
+        metrics = MetricCollection([CharacterErrorRates()])
+        self.metrics = nn.ModuleDict(
+            {
+                f"{phase}_metrics": metrics.clone(prefix=f"{phase}/")
+                for phase in ["train", "val", "test"]
+            }
         )
