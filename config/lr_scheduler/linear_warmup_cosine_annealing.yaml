@@ -1,9 +1,14 @@
 # @package _global_
 lr_scheduler:
+  # TODO(christian) go back to paper as to why this is used
+  # hydra uses the optimizer lr as the base = 1e-3
   scheduler:
+    # goes from 1e-8 to 1e-3 within 10 epochs, 25% of our 40 epoch budget,
+    # compared to 6.7% in paper
     _target_: pl_bolts.optimizers.lr_scheduler.LinearWarmupCosineAnnealingLR
-    warmup_epochs: 10
-    max_epochs: ${trainer.max_epochs}
+    warmup_epochs: 20 # change back to 10
+    max_epochs: ${trainer.max_epochs} #paper max = 150
+    # NOTE: This is extremely small, borderline 0
     warmup_start_lr: 1e-8
     eta_min: 1e-6
   interval: epoch

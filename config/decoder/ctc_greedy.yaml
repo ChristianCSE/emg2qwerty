@@ -1,3 +1,4 @@
 # @package _global_
 decoder:
+  # check hydra to see how this is picked up
   _target_: emg2qwerty.decoder.CTCGreedyDecoder

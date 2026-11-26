@@ -34,6 +34,7 @@ class EMGSessionData:
     ``self.timeseries`` is a `h5py.Dataset` instance with a compound datatype
     as in a numpy structured array containing three fields - EMG data from the
     left and right wrists, and their corresponding timestamps.
+
     The sampling rate of EMG is 2kHz, each EMG device has 16 electrode
     channels, and the signal has been high-pass filtered. Therefore, the fields
     corresponding to left and right EMG are 2D arrays of shape ``(T, 16)`` each

@@ -1,10 +1,13 @@
 # all of these are pytorch classes
 # what's passed to train.py
+# seems we have more options but this is
+# passed by hydra on python train
 defaults:
   - user: single_user
   - transforms: log_spectrogram
   - model: tds_conv_ctc
   - optimizer: adam
+    # there are other lr schedulers configured already
   - lr_scheduler: linear_warmup_cosine_annealing
   - decoder: ctc_greedy
   - cluster: local

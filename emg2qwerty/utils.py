@@ -19,7 +19,11 @@ def instantiate_optimizer_and_scheduler(
     lr_scheduler_config: DictConfig,
 ) -> dict[str, Any]:
     optimizer = instantiate(optimizer_config, params)
-    scheduler = instantiate(lr_scheduler_config.scheduler, optimizer)
+
+    # TODO(christian): note that optimizer is passed to scheduler
+    scheduler = instantiate(
+        lr_scheduler_config.scheduler,
+        optimizer)
     lr_scheduler = instantiate(lr_scheduler_config, scheduler=scheduler)
     return {
         "optimizer": optimizer,

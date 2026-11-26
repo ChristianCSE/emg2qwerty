@@ -75,6 +75,7 @@ def main(config: DictConfig):
             decoder=config.decoder,
         )
 
+    # TODO(christian): play with window length 
     # Instantiate LightningDataModule
     log.info(f"Instantiating LightningDataModule {config.datamodule}")
     datamodule = instantiate(
