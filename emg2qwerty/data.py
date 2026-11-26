@@ -430,9 +430,11 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
 
     Args:
         hdf5_path (str): Path to the session file in hdf5 format.
+
         window_length (int): Size of each window. Specify None for no windowing
             in which case this will be a dataset of length 1 containing the
             entire session. (default: ``None``)
+
         stride (int): Stride between consecutive windows. Specify None to set
             this to window_length, in which case there will be no overlap
             between consecutive windows. (default: ``window_length``)
@@ -477,6 +479,7 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return int(max(self.session_length - self.window_length, 0) // self.stride + 1)
 
+    # idx?
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         # Lazy init `EMGSessionData` per dataloading worker
         # since `h5py.File` objects can't be picked.
@@ -498,6 +501,7 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         window_start = max(offset - self.left_padding, 0)
         window_end = offset + self.window_length + self.right_padding
         window = self.session[window_start:window_end]
+
 
         # Extract EMG tensor corresponding to the window.
         emg = self.transform(window)
