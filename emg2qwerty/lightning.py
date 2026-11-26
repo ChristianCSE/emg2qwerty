@@ -66,6 +66,10 @@ class WindowedEMGDataModule(pl.LightningDataModule):
         # one WindowedEMGDataset per training file
         # window = 4 seconds, training file = ~16 minutes, so 150 windows
         # note: we have 16 training files, so 2400 windows
+
+
+        # cut entire dataset into windows of size 8000 (4 seconds)
+        # then concat them. We concat all sessions
         self.train_dataset = ConcatDataset(
             [
                 # TODO(Christian): lecture
@@ -115,6 +119,8 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             self.train_dataset,
             batch_size=self.batch_size,
             # TODO(christian): so we shuffle across the entire training set?
+            # yes, this concats all windowed training sessions and then shuffles the windows
+            # around, so a batch can contain windows from different recording sessions 
             shuffle=True,
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,

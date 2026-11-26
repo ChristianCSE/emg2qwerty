@@ -31,7 +31,7 @@ band_rotation:
     # since we have the foreach wrapper we are applying different rotations somehow?
     _target_: emg2qwerty.transforms.RandomBandRotation
     # you can modify these parameters
-    offsets: [-1, 0, 1]
+    offsets: [0] #[-1, 0, 1]
 
 # adds noise to data to augment it, so regularizer? (me note)
 temporal_jitter:
@@ -41,7 +41,7 @@ temporal_jitter:
 logspec:
   _target_: emg2qwerty.transforms.LogSpectrogram
   n_fft: 64 # each frame covers 64 instances of 0.5 ms, so 32 ms
-  # next frame starts 8 ms later 
+  # next frame starts 8 ms later
   hop_length: 16  # Downsamples from 2kHz to 125Hz
 
 # paper: max 3 masks of segments of length up to 200 ms

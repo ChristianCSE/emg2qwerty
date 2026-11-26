@@ -481,27 +481,36 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return int(max(self.session_length - self.window_length, 0) // self.stride + 1)
 
-    # idx?
+    # idx: think of it as the current window
+    # we get stride (=window length since we default to that for not specifying one)
+    # offset is current start position
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         # Lazy init `EMGSessionData` per dataloading worker
         # since `h5py.File` objects can't be picked.
         if not hasattr(self, "session"):
             self.session = EMGSessionData(self.hdf5_path) # loads the data
 
-        offset = idx * self.stride
+        offset = idx * self.stride #window length since don't send anything
+        # 8000
 
         # TODO(christian): this is applying the data augmentation!
-        # Randomly jitter the window offset.
         leftover = len(self.session) - (offset + self.window_length)
         if leftover < 0:
             raise IndexError(f"Index {idx} out of bounds")
         if leftover > 0 and self.jitter:
+            # in case not enough is leftover for a complete stride, we'll minimize
+            # the window size
             offset += np.random.randint(0, min(self.stride, leftover))
 
         # TODO(christian) lecture windowed data extraction
-        # Expand window to include contextual padding and fetch.
+        # offset = new starting position for new window
+        # we go 1200 (600 ms in the past: paper says muscles activate before keypress)
+        # max is in case it's the first window so no past would exist, -position
         window_start = max(offset - self.left_padding, 0)
+        # offset = starting position + window length + future look
         window_end = offset + self.window_length + self.right_padding
+        # this is the emg window which isn't the keystroke window
+        # (the window scoped for the actual value)
         window = self.session[window_start:window_end]
 
 

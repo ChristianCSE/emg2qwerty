@@ -14,9 +14,10 @@ module:
 # remember that sample = instance = 0.5 ms
 # meaning that has a reading of voltage in the 32 electrodes
 
-# tells us how to extract the ? data from the dataset
-# each session runs like several minutes to hour
-# lecture: seems we can iterate on window_length? more seconds?
+# instance = 0.5 ms recording
+# this is how we cut the raw data: length 8000 instances
+# WindowedEMGDataModule makes stride = w_lenght if not specified
+# so slice data into 8000 with stride 8000
 datamodule:
   _target_: emg2qwerty.lightning.WindowedEMGDataModule
   # this is used in spectogramNorm, this is time T
