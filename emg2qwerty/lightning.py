@@ -62,6 +62,10 @@ class WindowedEMGDataModule(pl.LightningDataModule):
         self.test_transform = test_transform
 
     def setup(self, stage: str | None = None) -> None:
+        # all training files are concatenated toegther
+        # one WindowedEMGDataset per training file
+        # window = 4 seconds, training file = ~16 minutes, so 150 windows
+        # note: we have 16 training files, so 2400 windows
         self.train_dataset = ConcatDataset(
             [
                 # TODO(Christian): lecture
@@ -78,6 +82,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
                 for hdf5_path in self.train_sessions
             ]
         )
+        # TODO(christian) print 1 iteration
         self.val_dataset = ConcatDataset(
             [
                 WindowedEMGDataset(
@@ -109,6 +114,7 @@ class WindowedEMGDataModule(pl.LightningDataModule):
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
+            # TODO(christian): so we shuffle across the entire training set?
             shuffle=True,
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,

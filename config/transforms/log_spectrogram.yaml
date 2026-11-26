@@ -40,7 +40,8 @@ temporal_jitter:
 
 logspec:
   _target_: emg2qwerty.transforms.LogSpectrogram
-  n_fft: 64
+  n_fft: 64 # each frame covers 64 instances of 0.5 ms, so 32 ms
+  # next frame starts 8 ms later 
   hop_length: 16  # Downsamples from 2kHz to 125Hz
 
 # paper: max 3 masks of segments of length up to 200 ms

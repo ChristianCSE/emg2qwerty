@@ -1,6 +1,7 @@
 # @package _global_
 module:
   _target_: emg2qwerty.lightning.TDSConvCTCModule
+  # log_spectogram.logspec..n_fft = 64
   in_features: 528  # freq * channels = (n_fft // 2 + 1) * 16
   mlp_features: [384]
   block_channels: [24, 24, 24, 24]
@@ -19,9 +20,5 @@ module:
 datamodule:
   _target_: emg2qwerty.lightning.WindowedEMGDataModule
   # this is used in spectogramNorm, this is time T
-  # me: so 2k Hz is 2000 samples per second and this is saying take 8000 samples at that rate
-  # so 4 seconds required
-  # 8k readings, each reading is 0.5 ms, so 4 seconds of recorded typing
   window_length: 8000  # 4 sec (of typing) windows for 2kHz EMG
-  # left & right padding on the window above
   padding: [1800, 200]  # 900ms past context, 100ms future context

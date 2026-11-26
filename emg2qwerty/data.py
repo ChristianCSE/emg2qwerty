@@ -473,6 +473,8 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         self.stride = stride if stride is not None else self.window_length
         assert self.window_length > 0 and self.stride > 0
 
+        # grabs activate motors before the window & after the window
+        # quasi-like bidirectional? but more limited window (when used by convo cnn)
         (self.left_padding, self.right_padding) = padding
         assert self.left_padding >= 0 and self.right_padding >= 0
 
@@ -512,6 +514,7 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         start_t = timestamps[offset - window_start]
         end_t = timestamps[(offset + self.window_length - 1) - window_start]
         label_data = self.session.ground_truth(start_t, end_t)
+
         labels = torch.as_tensor(label_data.labels)
 
         return emg, labels
