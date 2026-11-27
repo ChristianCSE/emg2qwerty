@@ -44,6 +44,8 @@ class WindowedEMGDataModule(pl.LightningDataModule):
         train_transform: Transform[np.ndarray, torch.Tensor],
         val_transform: Transform[np.ndarray, torch.Tensor],
         test_transform: Transform[np.ndarray, torch.Tensor],
+        test_window_length: int | None = None,
+        test_padding: tuple[int, int] = (0,0),
     ) -> None:
         super().__init__()
 
@@ -60,6 +62,8 @@ class WindowedEMGDataModule(pl.LightningDataModule):
         self.train_transform = train_transform
         self.val_transform = val_transform
         self.test_transform = test_transform
+        self.test_window_length = test_window_length
+        self.test_padding = test_padding
 
     def setup(self, stage: str | None = None) -> None:
         # all training files are concatenated toegther
@@ -106,8 +110,10 @@ class WindowedEMGDataModule(pl.LightningDataModule):
                     transform=self.test_transform,
                     # Feed the entire session at once without windowing/padding
                     # at test time for more realism
-                    window_length=None,
-                    padding=(0, 0),
+                    # window_length=None,
+                    # padding=(0, 0),
+                    window_length=self.test_window_length,
+                    padding=tuple(self.test_padding),
                     jitter=False,
                 )
                 for hdf5_path in self.test_sessions

@@ -26,3 +26,6 @@ datamodule:
   window_length: 8000  # 4 sec (of typing) windows for 2kHz EMG
   padding: [1800, 200]  # 900ms past context, 100ms future context
 #  padding: [2000, 400] # further back in time and more into future
+  # new
+  test_window_length: null
+  test_padding: [0, 0]
