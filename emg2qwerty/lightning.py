@@ -120,7 +120,10 @@ class WindowedEMGDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             # TODO(christian): so we shuffle across the entire training set?
             # yes, this concats all windowed training sessions and then shuffles the windows
-            # around, so a batch can contain windows from different recording sessions 
+            # around, so a batch can contain windows from different recording sessions
+            # reduces effect of electrode placements since we're shuffling across all sessions
+            # so potential shifts in electrode placements on writs is minimized
+            # not so much on regularization, more so on gradient and session connection
             shuffle=True,
             num_workers=self.num_workers,
             collate_fn=WindowedEMGDataset.collate,

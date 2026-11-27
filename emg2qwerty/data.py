@@ -512,6 +512,7 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         # this is the emg window which isn't the keystroke window
         # (the window scoped for the actual value)
         window = self.session[window_start:window_end]
+        # window = emg: what we train on
 
 
         # Extract EMG tensor corresponding to the window.
@@ -519,11 +520,17 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         assert torch.is_tensor(emg)
 
         # Extract labels corresponding to the original (un-padded) window.
+        # note: window
         timestamps = window[EMGSessionData.TIMESTAMPS]
         start_t = timestamps[offset - window_start]
         end_t = timestamps[(offset + self.window_length - 1) - window_start]
+
+
+        # (TODO) christian GROUND TRUTH WINDOW
         label_data = self.session.ground_truth(start_t, end_t)
 
+        # so training example = actual target window of 4 sec +
+        # the emg context .8 s of past and .2 s future
         labels = torch.as_tensor(label_data.labels)
 
         return emg, labels

@@ -38,6 +38,10 @@ temporal_jitter:
   _target_: emg2qwerty.transforms.TemporalAlignmentJitter
   max_offset: 120  # Max 60ms jitter for 2kHz EMG
 
+# freq = bin_k (2000 kHz / 64 nfft) = bin_k * 31.25
+# bin 0: freq 0:
+# bin 1: freq 31.25: oscillation component at 31.25
+# 64 nfft = 64 instances of 0.5 ms
 logspec:
   _target_: emg2qwerty.transforms.LogSpectrogram
   n_fft: 64 # each frame covers 64 instances of 0.5 ms, so 32 ms
