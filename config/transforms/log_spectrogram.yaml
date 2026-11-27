@@ -31,7 +31,7 @@ band_rotation:
     # since we have the foreach wrapper we are applying different rotations somehow?
     _target_: emg2qwerty.transforms.RandomBandRotation
     # you can modify these parameters
-    offsets: [0] #[-1, 0, 1]
+    offsets: [-1, 0, 1]
 
 # adds noise to data to augment it, so regularizer? (me note)
 temporal_jitter:

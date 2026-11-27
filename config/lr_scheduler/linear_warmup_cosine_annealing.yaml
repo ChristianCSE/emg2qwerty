@@ -6,7 +6,7 @@ lr_scheduler:
     # goes from 1e-8 to 1e-3 within 10 epochs, 25% of our 40 epoch budget,
     # compared to 6.7% in paper
     _target_: pl_bolts.optimizers.lr_scheduler.LinearWarmupCosineAnnealingLR
-    warmup_epochs: 20 # change back to 10
+    warmup_epochs: 20 # change back to 10 (keep at 20 since epoch = 40)
     max_epochs: ${trainer.max_epochs} #paper max = 150
     # NOTE: This is extremely small, borderline 0
     warmup_start_lr: 1e-8

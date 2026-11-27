@@ -24,5 +24,5 @@ datamodule:
   _target_: emg2qwerty.lightning.WindowedEMGDataModule
   # this is used in spectogramNorm, this is time T
   window_length: 8000  # 4 sec (of typing) windows for 2kHz EMG
-#  padding: [1800, 200]  # 900ms past context, 100ms future context
-  padding: [2000, 400] # further back in time and more into future
+  padding: [1800, 200]  # 900ms past context, 100ms future context
+#  padding: [2000, 400] # further back in time and more into future
