@@ -490,29 +490,34 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         if not hasattr(self, "session"):
             self.session = EMGSessionData(self.hdf5_path) # loads the data
 
-        offset = idx * self.stride #window length since don't send anything
-        # 8000
+        # dataloader requests the windows as it needs them
+        # idx 1 where window stride = 8000 that means offset (where we end it
+        # is 8000 (idx 0: [0-7999]) 8000 is the length of the new window
+        # 2 kHz (2000 samples per second, 8000 is 4 seconds)
+        # offset is our starting point for the new window idx=1
+        # so we're on the 4 second mark
+        offset = idx * self.stride
 
         # TODO(christian): this is applying the data augmentation!
         leftover = len(self.session) - (offset + self.window_length)
         if leftover < 0:
             raise IndexError(f"Index {idx} out of bounds")
+        # pushes offset forward, say rand(0,min(8000,x)) = rand(0,8000) = 600
+        # so now offset is 8600 so a bit more forward, this is our
         if leftover > 0 and self.jitter:
-            # in case not enough is leftover for a complete stride, we'll minimize
-            # the window size
             offset += np.random.randint(0, min(self.stride, leftover))
 
         # TODO(christian) lecture windowed data extraction
         # offset = new starting position for new window
         # we go 1200 (600 ms in the past: paper says muscles activate before keypress)
         # max is in case it's the first window so no past would exist, -position
+
         window_start = max(offset - self.left_padding, 0)
-        # offset = starting position + window length + future look
+        # offset = starting point + window length (8000) + future look
         window_end = offset + self.window_length + self.right_padding
         # this is the emg window which isn't the keystroke window
-        # (the window scoped for the actual value)
         window = self.session[window_start:window_end]
-        # window = emg: what we train on
+        # window = emg = wider window: what we train on
 
 
         # Extract EMG tensor corresponding to the window.
@@ -520,8 +525,13 @@ class WindowedEMGDataset(torch.utils.data.Dataset):
         assert torch.is_tensor(emg)
 
         # Extract labels corresponding to the original (un-padded) window.
-        # note: window
+        # note: this is the tiled window
         timestamps = window[EMGSessionData.TIMESTAMPS]
+        # offset = (idx * stride) + jitter
+        # window_start = offset - lookback
+        # (idx * stride) + jitter -  [(idx * stride) + jitter - lookback] =
+        # (idx * stride) + jitter - (idx * stride) - jitter + lookback =
+        # lookback
         start_t = timestamps[offset - window_start]
         end_t = timestamps[(offset + self.window_length - 1) - window_start]
 
