@@ -8,6 +8,15 @@ module:
   block_channels: [24, 24, 24, 24]
   kernel_width: 32  # Total temporal receptive field of 125 samples given 4 layers
 
+datamodule:
+  _target_: emg2qwerty.lightning.WindowedEMGDataModule
+  # this is used in spectogramNorm, this is time T
+  window_length: 8000  # 4 sec (of typing) windows for 2kHz EMG
+  padding: [1800, 200]  # 900ms past context, 100ms future context
+  test_window_length: null
+  test_padding: [0, 0]
+
+
 # window and example are the same thing
 # the recorded session is partitioned into 4 second pieces
 # each piece (each second) is one example. 32 of them are
@@ -20,12 +29,6 @@ module:
 # this is how we cut the raw data: length 8000 instances
 # WindowedEMGDataModule makes stride = w_lenght if not specified
 # so slice data into 8000 with stride 8000
-datamodule:
-  _target_: emg2qwerty.lightning.WindowedEMGDataModule
-  # this is used in spectogramNorm, this is time T
-  window_length: 8000  # 4 sec (of typing) windows for 2kHz EMG
-  padding: [1800, 200]  # 900ms past context, 100ms future context
+
 #  padding: [2000, 400] # further back in time and more into future
   # new
-  test_window_length: null
-  test_padding: [0, 0]

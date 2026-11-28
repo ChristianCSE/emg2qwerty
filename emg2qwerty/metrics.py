@@ -43,8 +43,9 @@ class CharacterErrorRates(Metric):
         edits = Counter(op for op, _, _ in editops)
 
         # Update running counts
-        self.insertions += edits["insert"]
-        self.deletions += edits["delete"]
+        # swap bug: flagged in piazza
+        self.insertions += edits["delete"]
+        self.deletions += edits["insert"]
         self.substitutions += edits["replace"]
         self.target_len += len(target)
 

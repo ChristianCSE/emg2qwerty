@@ -36,14 +36,18 @@ class SpectrogramNorm(nn.Module):
         # the N examples get grouped into the 32, so 32 decides the params
         # B & gamma = 2*32 = 64
         # NOTE: Affine inside of this!
+        # mthd is written such that it normalizes on the second axes (1 idx axes)
+        # (N, C, H, W)
         self.batch_norm = nn.BatchNorm2d(channels) # 32
 
+    # (T=622?, N, bands=2, electrode_channels=16, freq)
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        T, N, bands, C, freq = inputs.shape  # (T, N, bands=2, C=16, freq=33)
+        T, N, bands, C, freq = inputs.shape  # (T, N, bands=2, C=16 electrodes, freq=33)
         assert self.channels == bands * C # allows for reshape to work
 
+        # current: (T=622, N, bands=2, electrode_channels=16, freq)
         x = inputs.movedim(0, -1)  # (N, bands=2, C=16, freq=33, T)
-        x = x.reshape(N, bands * C, freq, T) # (N, 32, freq=33, T)
+        x = x.reshape(N, bands * C, freq, T) # (N, 32 electrodes, freq=33, T)
 
         # every electrode is normalized individually
         # Note: the stats are across the examples, so while an N example

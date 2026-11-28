@@ -190,7 +190,8 @@ class TDSConvCTCModule(pl.LightningModule):
         # inputs: (T, N, bands=2, electrode_channels=16, freq)
 
         self.model = nn.Sequential(
-            # return: (T, N, bands=2, C=16, freq=33) example is normalized per channel:
+            # return: (T, N, bands=2, C=16, freq=33) example is normalized per electrode which is
+            # defined as 2*16:
             # so a single channel runs through each example mapped to it
             # so 32 iterations of (N, freq, T) one for each channel
             # 32 different means & vars, and 64 learnable params (B & y)
@@ -202,6 +203,7 @@ class TDSConvCTCModule(pl.LightningModule):
             # equalize 32 electrodes against each other; doesn't equalize freq bins against each other
             SpectrogramNorm(channels=self.NUM_BANDS * self.ELECTRODE_CHANNELS),
             # returns: (T, N, bands=2, mlp_features[-1])
+            # in specto: (N,32,33,T)
             # pooling defaults to mean
             # Each band (2) gets a RotationInvariantMLP(in_fts, mlp_fts, pooling=mean, offsets=(-1,0,1))
 
